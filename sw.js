@@ -10,7 +10,7 @@
  * requests (media streaming), and non-GETs always go to the network.
  */
 
-const CACHE_VERSION = 'drift-202609301957';
+const CACHE_VERSION = 'drift-202609302027';
 const SHELL = [
   '/',
   '/index.html',

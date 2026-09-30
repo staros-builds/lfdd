@@ -1,6 +1,6 @@
-/* Drift offline service worker.
+/* LFDD offline service worker.
  *
- * Caches the app shell (same-origin GETs) so Drift keeps opening with no
+ * Caches the app shell (same-origin GETs) so LFDD keeps opening with no
  * connection. Offline, the app runs in This-device mode — Cloud (Supabase)
  * data needs the network and the app says so honestly instead of failing
  * silently.
@@ -10,15 +10,29 @@
  * requests (media streaming), and non-GETs always go to the network.
  */
 
-const CACHE_VERSION = 'drift-202609302143';
+const CACHE_VERSION = 'lfdd-__BUILD_ID__';
+// Derive shell paths from the service worker's own scope so the app works
+// when hosted under a subpath (e.g. /lfdd/) instead of the domain root.
+// self.registration.scope is like "https://host/lfdd/" — strip the origin
+// to get the base path.
+const SCOPE_PATH = (() => {
+  try {
+    const scopeUrl = new URL(self.registration.scope);
+    let p = scopeUrl.pathname;
+    if (!p.endsWith('/')) p += '/';
+    return p;
+  } catch {
+    return '/';
+  }
+})();
 const SHELL = [
-  '/',
-  '/index.html',
-  '/manifest.webmanifest',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/icon-maskable-512.png',
-  '/icons/apple-touch-icon.png',
+  SCOPE_PATH,
+  SCOPE_PATH + 'index.html',
+  SCOPE_PATH + 'manifest.webmanifest',
+  SCOPE_PATH + 'icons/icon-192.png',
+  SCOPE_PATH + 'icons/icon-512.png',
+  SCOPE_PATH + 'icons/icon-maskable-512.png',
+  SCOPE_PATH + 'icons/apple-touch-icon.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -40,7 +54,7 @@ self.addEventListener('activate', (event) => {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(keys.filter((k) => k.startsWith('drift-') && k !== CACHE_VERSION).map((k) => caches.delete(k)))
+        Promise.all(keys.filter((k) => (k.startsWith('lfdd-') || k.startsWith('drift-')) && k !== CACHE_VERSION).map((k) => caches.delete(k)))
       )
       .then(() => self.clients.claim())
   );

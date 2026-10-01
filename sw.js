@@ -10,7 +10,7 @@
  * requests (media streaming), and non-GETs always go to the network.
  */
 
-const CACHE_VERSION = 'lfdd-__BUILD_ID__';
+const CACHE_VERSION = 'lfdd-202610010456';
 // Derive shell paths from the service worker's own scope so the app works
 // when hosted under a subpath (e.g. /lfdd/) instead of the domain root.
 // self.registration.scope is like "https://host/lfdd/" — strip the origin
@@ -73,21 +73,27 @@ self.addEventListener('fetch', (event) => {
   if (request.headers.has('range')) return;
 
   // Navigations: try the network first so a fresh index.html wins when
-  // online; fall back to the cached shell when offline.
+  // online; fall back to the cached shell when offline. The cache key must
+  // include the scope path — under /lfdd/ the shell lives at /lfdd/index.html,
+  // not the domain root.
   if (request.mode === 'navigate') {
+    const shellKey = SCOPE_PATH + 'index.html';
     event.respondWith(
       fetch(request)
         .then((res) => {
           const copy = res.clone();
-          caches.open(CACHE_VERSION).then((cache) => cache.put('/index.html', copy)).catch(() => {});
+          caches.open(CACHE_VERSION).then((cache) => cache.put(shellKey, copy)).catch(() => {});
           return res;
         })
-        .catch(() => caches.match('/index.html', { cacheName: CACHE_VERSION }))
+        .catch(() => caches.match(shellKey, { cacheName: CACHE_VERSION }))
     );
     return;
   }
 
-  // Static assets: cache-first, populate on miss.
+  // Static assets: cache-first, populate on miss. The app-update probe
+  // (index.html?__lfdd_build=…) must never be cached — it exists precisely
+  // to bypass every cache and see the live bundle name.
+  if (url.searchParams.has('__lfdd_build')) return;
   event.respondWith(
     caches.match(request, { cacheName: CACHE_VERSION }).then((hit) => {
       if (hit) return hit;

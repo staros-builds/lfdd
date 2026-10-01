@@ -10,7 +10,7 @@
  * requests (media streaming), and non-GETs always go to the network.
  */
 
-const CACHE_VERSION = 'lfdd-202610010505';
+const CACHE_VERSION = 'lfdd-202610010640';
 // Derive shell paths from the service worker's own scope so the app works
 // when hosted under a subpath (e.g. /lfdd/) instead of the domain root.
 // self.registration.scope is like "https://host/lfdd/" — strip the origin
